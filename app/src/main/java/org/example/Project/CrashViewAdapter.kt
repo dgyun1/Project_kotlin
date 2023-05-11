@@ -1,12 +1,14 @@
-package org.example.api_test
+package org.example.Project
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import android.text.method.LinkMovementMethod
-import android.text.method.TextKeyListener.clear
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -17,10 +19,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.recyclerview.widget.RecyclerView
-import org.example.api_test.CrashDataEntity
-import org.example.api_test.CrashService
-import org.example.api_test.R
-import org.example.api_test.VideoViewApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.example.Project.VideoViewApi
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -29,6 +33,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Url
+import java.io.IOException
+import java.net.URL
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 class CrashViewAdapter(var crashLists: ArrayList<CrashDataEntity>, var con: Context) :
@@ -50,59 +58,77 @@ class CrashViewAdapter(var crashLists: ArrayList<CrashDataEntity>, var con: Cont
             tv_videodate = itemView.findViewById(R.id.txt_videodate)
 
 
-            itemView.setOnClickListener {
-                AlertDialog.Builder(con).apply {
-                    val position = adapterPosition
-                    val crashList = filteredcrashLists[position]
-                    setTitle("번호 : ${crashList.ID}")
-                    setMessage("제목 : ${crashList.videodate}")
-                    setPositiveButton("OK") { dialog, which ->
-                        val videoUrl = "http://192.168.0.62:5000/crashvideo/watch/${crashList.videodate}"
-                        val videowatch = "http://192.168.0.62:5000/videowatch"
+            fun saveVideoToGallery(videoUrl: String) {
+                GlobalScope.launch {
+                    val retrofit = Retrofit.Builder()
+                        .baseUrl(CrashViewApi.DOMAIN)
+                        .addConverterFactory(ScalarsConverterFactory.create())
+                        .build()
+                    val api = retrofit.create(Api::class.java)
 
-                        val retrofit = Retrofit.Builder()
-                            .baseUrl("http://192.168.0.62:5000/")
-                            .addConverterFactory(ScalarsConverterFactory.create())
-                            .build()
-                        val api = retrofit.create(Api::class.java)
+                    val call = api.getVideoUrl("/crashvideo/download/$videoUrl")
+                    try {
+                        val response = call.execute()
+                        if (response.isSuccessful) {
+                            val jsonString = response.body()
+                            val jsonObject = JSONObject(jsonString)
+                            val videoUrl = jsonObject.getString("url")
+                            val fileName = UUID.randomUUID().toString() + ".mp4"
+                            val url = URL(videoUrl)
+                            val connection = url.openConnection()
+                            connection.connect()
 
-                        val call = api.getVideoUrl(videoUrl)
-                        call.enqueue(object : Callback<String> {
-                            override fun onResponse(call: Call<String>, response: Response<String>) {
-                                if (response.isSuccessful) {
-                                    val responseText = response.body() ?: "응답 없음"
-                                    Log.i("API_CALL", "응답 : $responseText")
-                                    AlertDialog.Builder(con).apply {
-                                        setTitle("API 요청 결과")
-                                        val textView = TextView(con).apply {
-                                            text = responseText
-                                            isClickable = true
-                                            movementMethod = LinkMovementMethod.getInstance()
-                                            setOnClickListener {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(videowatch))
-                                                startActivity(con, intent, null)
-                                            }
-                                        }
-                                        setView(textView)
-                                        setPositiveButton("확인") { dialog, which -> }
-                                        show()
+                            // Get file length and type
+                            val contentLength = connection.contentLength
+                            val contentType = connection.contentType ?: "application/octet-stream"
+
+                            // Create output stream
+                            val resolver = con.contentResolver
+                            val contentValues = ContentValues().apply {
+                                put(MediaStore.Video.Media.DISPLAY_NAME, fileName)
+                                put(MediaStore.Video.Media.MIME_TYPE, contentType)
+                                put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/Project_Crash_Video")
+                            }
+                            val uri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues)
+                            uri?.let {
+                                resolver.openOutputStream(it)?.use { outputStream ->
+                                    connection.getInputStream().use { inputStream ->
+                                        inputStream.copyTo(outputStream)
                                     }
-                                } else {
-                                    Log.e("API_CALL", "요청 실패")
-                                    Toast.makeText(con, "요청 실패", Toast.LENGTH_SHORT).show()
                                 }
                             }
 
-                            override fun onFailure(call: Call<String>, t: Throwable) {
-                                Log.e("API_CALL", "요청 실패", t)
-                                Toast.makeText(con, "요청 실패", Toast.LENGTH_SHORT).show()
+                            Log.i("API_CALL", "$fileName downloaded and saved to gallery")
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(con, "$fileName 다운로드 완료", Toast.LENGTH_SHORT).show()
                             }
-                        })
+                        } else {
+                            Log.e("API_CALL", "Failed to request video URL")
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(con, "요청실패", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: IOException) {
+                        Log.e("API_CALL", "Failed to request video URL", e)
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(con, "다운로드 실패", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+
+            itemView.setOnClickListener {
+                AlertDialog.Builder(con).apply {
+                    val position = adapterPosition
+                    val crashvideolist = filteredcrashLists[position]
+                    setTitle("번호 : ${crashvideolist.ID}")
+                    setMessage("제목 : ${crashvideolist.videodate}")
+                    setPositiveButton("OK") { dialog, which ->
+                        saveVideoToGallery(crashvideolist.videodate)
                     }
                     show()
                 }
             }
-
         }
     }
     interface Api {

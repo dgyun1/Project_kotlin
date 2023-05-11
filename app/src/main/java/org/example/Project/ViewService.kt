@@ -1,9 +1,10 @@
-package org.example.api_test
+package org.example.Project
+
 
 
 import retrofit2.Call
 import retrofit2.http.GET
-import retrofit2.http.Query
+
 
 
 class ViewApi {
@@ -15,5 +16,4 @@ class ViewApi {
 interface ViewService {
     @GET("/sensor/select")
     fun requestData() : Call<List<LogDataEntity>>
-
 }

@@ -1,12 +1,11 @@
-package org.example.api_test
+package org.example.Project
+
+
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.Button
-
 import android.widget.SearchView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -32,6 +31,7 @@ class SubActivity : AppCompatActivity() {
 
         val btn2: Button = findViewById(R.id.btn2)
         val btn3: Button = findViewById(R.id.btn3)
+
         btn2.setOnClickListener{
             val intent = Intent(this, SubActivity2::class.java)
             startActivity(intent)
@@ -52,6 +52,7 @@ class SubActivity : AppCompatActivity() {
         // videoLists 초기화
         logLists = ArrayList()
         setAdapter()
+
         val recyclerView: RecyclerView = findViewById(R.id.log_list_view)
 
         recyclerView.adapter = viewAdapter
@@ -59,6 +60,14 @@ class SubActivity : AppCompatActivity() {
         val layoutManager = LinearLayoutManager(baseContext)
         recyclerView.layoutManager = layoutManager
 
+        runOnUiThread {
+            viewAdapter.setList(logLists)
+            viewAdapter.notifyDataSetChanged()
+        }
+        GlobalScope.launch(Dispatchers.Main) { // UI 스레드에서 실행
+            viewAdapter.setList(logLists)
+            viewAdapter.notifyDataSetChanged()
+        }
         // 기존에 저장된 데이터를 먼저 RecyclerView에 표시
         GlobalScope.launch {
             val db = AppDatabase.getInstance(applicationContext)

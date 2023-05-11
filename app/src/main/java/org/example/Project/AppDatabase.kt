@@ -1,7 +1,9 @@
-package org.example.api_test
+package org.example.Project
 
 import android.content.Context
 import androidx.room.*
+import org.example.Project.LogDataDao
+import org.example.Project.LogDataEntity
 
 @Database(entities = [LogDataEntity::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {

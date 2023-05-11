@@ -70,6 +70,12 @@
             android:layout_height="70dp"
             android:text="충격 감지 영상 조회"
             android:textSize="20sp" />
+        <Button
+            android:id="@+id/btn4"
+            android:layout_width="230dp"
+            android:layout_height="70dp"
+            android:text="동영상 시청"
+            android:textSize="20sp" />
     </LinearLayout>
 
 </LinearLayout>

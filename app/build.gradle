@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'org.example.api_test'
+    namespace 'org.example.Project'
     compileSdk 33
 
     defaultConfig {
-        applicationId "org.example.api_test"
+        applicationId "org.example.Project"
         minSdk 28
         targetSdk 33
         versionCode 1

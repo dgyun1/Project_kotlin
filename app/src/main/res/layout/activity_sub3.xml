@@ -44,6 +44,12 @@
             android:iconifiedByDefault="false"
             android:queryHint="제목을 입력하세요"
             />
+        <Button
+            android:id="@+id/gallery_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:text="동영상 시청" />
 
         <ScrollView
             android:layout_width="match_parent"

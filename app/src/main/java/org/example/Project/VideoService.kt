@@ -1,4 +1,4 @@
-package org.example.api_test
+package org.example.Project
 
 import retrofit2.Call
 import retrofit2.http.GET

@@ -1,10 +1,9 @@
-package org.example.api_test
+package org.example.Project
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
-import android.nfc.tech.MifareUltralight.PAGE_SIZE
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View

@@ -1,11 +1,11 @@
-package org.example.api_test
+package org.example.Project
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
-@Entity(tableName = "VideoDataEntity")
-data class VideoDataEntity (
+@Entity(tableName = "CrashDataEntity")
+data class CrashDataEntity (
     @PrimaryKey
     @SerializedName("ID")
     var ID: Int,
